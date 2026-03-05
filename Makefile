@@ -3,7 +3,7 @@
 
 # 项目名称和版本
 PROJECT_NAME := get_jobs
-MODULE_NAME := github.com/loks666/get_jobs
+MODULE_NAME := github.com/yahao333/get_jobs
 VERSION := 1.0.0
 BUILD_TIME := $(shell date -u '+%Y-%m-%d %H:%M:%S')
 GO := go
