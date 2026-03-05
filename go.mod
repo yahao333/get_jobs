@@ -5,7 +5,6 @@ go 1.25.0
 require (
 	github.com/go-vgo/robotgo v1.0.1
 	github.com/kbinani/screenshot v0.0.0-20250624051815-089614a94018
-	github.com/loks666/get_jobs v0.0.0-00010101000000-000000000000
 	github.com/playwright-community/playwright-go v0.5700.1
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
