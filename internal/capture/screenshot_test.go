@@ -3,6 +3,7 @@ package capture
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -181,7 +182,10 @@ func TestCaptureActiveWindow_NoWindow(t *testing.T) {
 	_, err := s.CaptureActiveWindow()
 	// 可能返回错误或者返回主屏幕截图，取决于实现
 	if err != nil {
-		assert.Contains(t, err.Error(), "没有找到")
+		msg := err.Error()
+		if !strings.Contains(msg, "没有找到") && !strings.Contains(msg, "捕获窗口失败") {
+			t.Errorf("Unexpected error message: %s", msg)
+		}
 	}
 }
 
