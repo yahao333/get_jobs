@@ -3,6 +3,8 @@ package storage
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"time"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -16,23 +18,23 @@ var DB *gorm.DB
 
 // BossData Boss直聘岗位数据
 type BossData struct {
-	ID             int64  `gorm:"primaryKey" json:"id"`
-	EncryptID      string `gorm:"column:encrypt_id" json:"encrypt_id"`
-	EncryptUserID  string `gorm:"column:encrypt_user_id" json:"encrypt_user_id"`
-	CompanyName    string `gorm:"column:company_name" json:"company_name"`
-	JobName        string `gorm:"column:job_name" json:"job_name"`
-	Salary         string `gorm:"column:salary" json:"salary"`
-	Location       string `gorm:"column:location" json:"location"`
-	Experience     string `gorm:"column:experience" json:"experience"`
-	Degree         string `gorm:"column:degree" json:"degree"`
-	HRName         string `gorm:"column:hr_name" json:"hr_name"`
-	HRPosition     string `gorm:"column:hr_position" json:"hr_position"`
-	HRActiveStatus string `gorm:"column:hr_active_status" json:"hr_active_status"`
-	DeliveryStatus string `gorm:"column:delivery_status" json:"delivery_status"`
-	JobDescription string `gorm:"column:job_description" json:"job_description"`
-	JobURL         string `gorm:"column:job_url" json:"job_url"`
-	CreatedAt      string `gorm:"column:created_at" json:"created_at"`
-	UpdatedAt      string `gorm:"column:updated_at" json:"updated_at"`
+	ID             int64     `gorm:"primaryKey" json:"id"`
+	EncryptID      string    `gorm:"column:encrypt_id" json:"encrypt_id"`
+	EncryptUserID  string    `gorm:"column:encrypt_user_id" json:"encrypt_user_id"`
+	CompanyName    string    `gorm:"column:company_name" json:"company_name"`
+	JobName        string    `gorm:"column:job_name" json:"job_name"`
+	Salary         string    `gorm:"column:salary" json:"salary"`
+	Location       string    `gorm:"column:location" json:"location"`
+	Experience     string    `gorm:"column:experience" json:"experience"`
+	Degree         string    `gorm:"column:degree" json:"degree"`
+	HRName         string    `gorm:"column:hr_name" json:"hr_name"`
+	HRPosition     string    `gorm:"column:hr_position" json:"hr_position"`
+	HRActiveStatus string    `gorm:"column:hr_active_status" json:"hr_active_status"`
+	DeliveryStatus string    `gorm:"column:delivery_status" json:"delivery_status"`
+	JobDescription string    `gorm:"column:job_description" json:"job_description"`
+	JobURL         string    `gorm:"column:job_url" json:"job_url"`
+	CreatedAt      time.Time `gorm:"column:created_at" json:"created_at"`
+	UpdatedAt      time.Time `gorm:"column:updated_at" json:"updated_at"`
 }
 
 // TableName 指定表名
@@ -42,11 +44,11 @@ func (BossData) TableName() string {
 
 // Blacklist 黑名单
 type Blacklist struct {
-	ID        int64  `gorm:"primaryKey" json:"id"`
-	Keyword   string `gorm:"column:keyword" json:"keyword"`
-	Type      string `gorm:"column:type" json:"type"`     // company, hr, job
-	Source    string `gorm:"column:source" json:"source"` // manual, auto
-	CreatedAt string `gorm:"column:created_at" json:"created_at"`
+	ID        int64     `gorm:"primaryKey" json:"id"`
+	Keyword   string    `gorm:"column:keyword" json:"keyword"`
+	Type      string    `gorm:"column:type" json:"type"`     // company, hr, job
+	Source    string    `gorm:"column:source" json:"source"` // manual, auto
+	CreatedAt time.Time `gorm:"column:created_at" json:"created_at"`
 }
 
 // TableName 指定表名
@@ -56,13 +58,13 @@ func (Blacklist) TableName() string {
 
 // DeliveryRecord 投递记录
 type DeliveryRecord struct {
-	ID          int64  `gorm:"primaryKey" json:"id"`
-	JobID       int64  `gorm:"column:job_id" json:"job_id"`
-	Platform    string `gorm:"column:platform" json:"platform"`
-	Status      string `gorm:"column:status" json:"status"` // success, failed, pending
-	Message     string `gorm:"column:message" json:"message"`
-	DeliveredAt string `gorm:"column:delivered_at" json:"delivered_at"`
-	CreatedAt   string `gorm:"column:created_at" json:"created_at"`
+	ID          int64     `gorm:"primaryKey" json:"id"`
+	JobID       int64     `gorm:"column:job_id" json:"job_id"`
+	Platform    string    `gorm:"column:platform" json:"platform"`
+	Status      string    `gorm:"column:status" json:"status"` // success, failed, pending
+	Message     string    `gorm:"column:message" json:"message"`
+	DeliveredAt time.Time `gorm:"column:delivered_at" json:"delivered_at"`
+	CreatedAt   time.Time `gorm:"column:created_at" json:"created_at"`
 }
 
 // TableName 指定表名
@@ -75,17 +77,9 @@ func InitDB() error {
 	dbPath := config.GetString("database.path")
 
 	// 确保数据库目录存在
-	dir := dbPath
-	for i := len(dir) - 1; i >= 0; i-- {
-		if dir[i] == '/' || dir[i] == '\\' {
-			dir = dir[:i]
-			break
-		}
-	}
-	if dir != "" && dir != "." {
-		if err := os.MkdirAll(dir, 0755); err != nil {
-			return fmt.Errorf("创建数据库目录失败: %w", err)
-		}
+	dir := filepath.Dir(dbPath)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return fmt.Errorf("创建数据库目录失败: %w", err)
 	}
 
 	// 打开数据库连接
@@ -94,6 +88,11 @@ func InitDB() error {
 	})
 	if err != nil {
 		return fmt.Errorf("打开数据库失败: %w", err)
+	}
+
+	// 检查并执行数据迁移 (必须在 AutoMigrate 之前)
+	if err := CheckAndMigrate(db); err != nil {
+		return fmt.Errorf("数据库迁移检查失败: %w", err)
 	}
 
 	// 自动迁移表结构
