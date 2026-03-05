@@ -7,6 +7,7 @@ import (
 	"image/png"
 	"os"
 
+	"github.com/go-vgo/robotgo"
 	"github.com/kbinani/screenshot"
 
 	"github.com/yahao333/get_jobs/internal/config"
@@ -39,15 +40,30 @@ func (s *Screenshot) CaptureFullScreen() ([]byte, error) {
 
 // CaptureWindow 捕获指定窗口
 func (s *Screenshot) CaptureWindow(windowID int) ([]byte, error) {
-	return nil, fmt.Errorf("当前截图库不支持指定窗口截图，请使用全屏截图或区域截图")
-	/*
-		img, err := screenshot.CaptureWindow(windowID)
-		if err != nil {
-			return nil, fmt.Errorf("捕获窗口失败: %w", err)
-		}
+	// 如果 windowID 为 0，通常表示主屏幕（GetWindows 返回的 ID）
+	if windowID == 0 {
+		return s.CaptureFullScreen()
+	}
 
-		return s.encodeToPNG(img)
-	*/
+	// 获取窗口边界
+	x, y, w, h := robotgo.GetBounds(windowID)
+	if w <= 0 || h <= 0 {
+		return nil, fmt.Errorf("捕获窗口失败: 无效的窗口 ID 或窗口不可见 (ID: %d)", windowID)
+	}
+
+	// 捕获窗口区域
+	img, err := robotgo.CaptureImg(x, y, w, h)
+	if err != nil {
+		return nil, fmt.Errorf("捕获窗口失败: %w", err)
+	}
+
+	// 转换为 *image.RGBA
+	rgba, ok := img.(*image.RGBA)
+	if !ok {
+		return nil, fmt.Errorf("捕获窗口失败: 图像格式不支持")
+	}
+
+	return s.encodeToPNG(rgba)
 }
 
 // CaptureRegion 捕获指定区域
@@ -69,18 +85,13 @@ func (s *Screenshot) CaptureRegion(x, y, width, height int) ([]byte, error) {
 
 // CaptureActiveWindow 捕获当前活跃窗口
 func (s *Screenshot) CaptureActiveWindow() ([]byte, error) {
-	// 获取所有窗口信息
-	windows, err := s.GetWindows()
-	if err != nil {
-		return nil, err
+	// 获取当前活跃窗口 PID
+	pid := robotgo.GetPid()
+	if pid <= 0 {
+		return nil, fmt.Errorf("没有找到活跃窗口")
 	}
 
-	// 找到最前面的窗口（通常是活跃窗口）
-	if len(windows) > 0 {
-		return s.CaptureWindow(windows[0].ID)
-	}
-
-	return nil, fmt.Errorf("没有找到活跃窗口")
+	return s.CaptureWindow(int(pid))
 }
 
 // GetWindows 获取所有窗口信息
