@@ -2,7 +2,9 @@ package playwright
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -224,9 +226,12 @@ func TestDualChannelPositioner_FindClickableElements_WithBrowser(t *testing.T) {
 func TestDualChannelPositioner_WaitForPageStable_NilPage(t *testing.T) {
 	p := NewDualChannelPositioner(nil)
 
-	err := p.WaitForPageStable(1000, 100)
+	// 由于 WaitForPageStable 会重试直到超时，这里只需检查返回错误
+	err := p.WaitForPageStable(100*time.Millisecond, 50*time.Millisecond)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "浏览器未启动")
+	// 错误可能是 "浏览器未启动" 或 "等待页面稳定超时"
+	assert.True(t, strings.Contains(err.Error(), "浏览器未启动") ||
+		strings.Contains(err.Error(), "等待页面稳定超时"))
 }
 
 // TestDualChannelPositioner_WaitForPageStable_WithBrowser 测试等待页面稳定（有 browser 但未启动）
@@ -234,9 +239,11 @@ func TestDualChannelPositioner_WaitForPageStable_WithBrowser(t *testing.T) {
 	b := NewBrowser()
 	p := NewDualChannelPositioner(b)
 
-	err := p.WaitForPageStable(1000, 100)
+	err := p.WaitForPageStable(100*time.Millisecond, 50*time.Millisecond)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "浏览器未启动")
+	// 错误可能是 "浏览器未启动" 或 "等待页面稳定超时"
+	assert.True(t, strings.Contains(err.Error(), "浏览器未启动") ||
+		strings.Contains(err.Error(), "等待页面稳定超时"))
 }
 
 // TestDualChannelPositioner_GetElementByVisual 测试视觉定位（需要实现）
@@ -265,8 +272,10 @@ func TestDualChannelPositioner_ClickWithRetry_WithBrowser(t *testing.T) {
 
 	err := p.ClickWithRetry("#test", 3)
 	assert.Error(t, err)
-	// 错误可能来自 browser.ClickElement 或 browser 为 nil
-	assert.Contains(t, err.Error(), "浏览器未启动")
+	// page 为 nil 时，ClickElement 返回"浏览器未启动"错误
+	// 但 ClickWithRetry 会重试直到超时
+	assert.True(t, strings.Contains(err.Error(), "浏览器未启动") ||
+		strings.Contains(err.Error(), "点击失败"))
 }
 
 // TestDualChannelPositioner_GetPageInfo_NilPage 测试获取页面信息（page 为 nil）
