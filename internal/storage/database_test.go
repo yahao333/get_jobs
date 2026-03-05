@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
@@ -103,11 +104,11 @@ func TestBossDataCRUD(t *testing.T) {
 	t.Run("query boss data", func(t *testing.T) {
 		// 先创建一条数据
 		data := &BossData{
-			EncryptID:     "test_encrypt_789",
-			CompanyName:   "查询测试公司",
-			JobName:       "Java开发",
-			Salary:        "15k-25k",
-			Location:      "上海",
+			EncryptID:      "test_encrypt_789",
+			CompanyName:    "查询测试公司",
+			JobName:        "Java开发",
+			Salary:         "15k-25k",
+			Location:       "上海",
 			DeliveryStatus: "待投递",
 		}
 		err := Create(data)
@@ -125,9 +126,9 @@ func TestBossDataCRUD(t *testing.T) {
 		// 创建多条数据
 		for i := 0; i < 3; i++ {
 			data := &BossData{
-				EncryptID:     "where_test_" + string(rune('a'+i)),
-				CompanyName:   "Where测试公司",
-				JobName:       "测试职位",
+				EncryptID:      "where_test_" + string(rune('a'+i)),
+				CompanyName:    "Where测试公司",
+				JobName:        "测试职位",
 				DeliveryStatus: "待投递",
 			}
 			Create(data)
@@ -168,8 +169,8 @@ func TestBossDataCRUD(t *testing.T) {
 	t.Run("delete boss data", func(t *testing.T) {
 		// 创建数据
 		data := &BossData{
-			EncryptID:     "delete_test_123",
-			CompanyName:   "删除测试公司",
+			EncryptID:      "delete_test_123",
+			CompanyName:    "删除测试公司",
 			DeliveryStatus: "待投递",
 		}
 		err := Create(data)
@@ -190,8 +191,8 @@ func TestBossDataCRUD(t *testing.T) {
 		// 创建多条数据
 		for i := 0; i < 5; i++ {
 			data := &BossData{
-				EncryptID:     "count_test_" + string(rune('a'+i)),
-				CompanyName:   "计数测试公司",
+				EncryptID:      "count_test_" + string(rune('a'+i)),
+				CompanyName:    "计数测试公司",
 				DeliveryStatus: "待投递",
 			}
 			Create(data)
@@ -201,6 +202,29 @@ func TestBossDataCRUD(t *testing.T) {
 		count, err := Count(&BossData{}, "company_name = ?", "计数测试公司")
 		require.NoError(t, err)
 		assert.GreaterOrEqual(t, count, int64(5))
+	})
+
+	t.Run("check time fields", func(t *testing.T) {
+		data := &BossData{
+			EncryptID:      "time_test_123",
+			CompanyName:    "时间测试公司",
+			JobName:        "时间测试职位",
+			DeliveryStatus: "待投递",
+		}
+		err := Create(data)
+		require.NoError(t, err)
+
+		var result BossData
+		err = First(&result, "id = ?", data.ID)
+		require.NoError(t, err)
+
+		// 验证 CreatedAt 和 UpdatedAt 是否为非零时间
+		assert.False(t, result.CreatedAt.IsZero(), "CreatedAt 应该是非零时间")
+		assert.False(t, result.UpdatedAt.IsZero(), "UpdatedAt 应该是非零时间")
+
+		// 验证时间是否在合理范围内（例如最近1分钟内）
+		assert.WithinDuration(t, time.Now(), result.CreatedAt, time.Minute, "CreatedAt 应该是最近的时间")
+		assert.WithinDuration(t, time.Now(), result.UpdatedAt, time.Minute, "UpdatedAt 应该是最近的时间")
 	})
 }
 
@@ -219,10 +243,11 @@ func TestBlacklistCRUD(t *testing.T) {
 			Type:    "company",
 			Source:  "manual",
 		}
-
 		err := Create(bl)
 		require.NoError(t, err)
 		assert.Greater(t, bl.ID, int64(0))
+		assert.False(t, bl.CreatedAt.IsZero(), "CreatedAt should not be zero")
+		assert.True(t, time.Since(bl.CreatedAt) < time.Minute, "CreatedAt should be recent")
 	})
 
 	t.Run("query blacklist", func(t *testing.T) {
@@ -292,6 +317,8 @@ func TestDeliveryRecordCRUD(t *testing.T) {
 		err := Create(record)
 		require.NoError(t, err)
 		assert.Greater(t, record.ID, int64(0))
+		assert.False(t, record.CreatedAt.IsZero(), "CreatedAt should not be zero")
+		assert.True(t, time.Since(record.CreatedAt) < time.Minute, "CreatedAt should be recent")
 	})
 
 	t.Run("query delivery record", func(t *testing.T) {
@@ -376,9 +403,9 @@ func BenchmarkCreateBossData(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		data := &BossData{
-			EncryptID:     "bench_" + string(rune(i)),
-			CompanyName:  " Benchmark公司",
-			JobName:      "测试职位",
+			EncryptID:      "bench_" + string(rune(i)),
+			CompanyName:    " Benchmark公司",
+			JobName:        "测试职位",
 			DeliveryStatus: "待投递",
 		}
 		Create(data)
@@ -395,9 +422,9 @@ func BenchmarkQueryBossData(b *testing.B) {
 	// 预先创建数据
 	for i := 0; i < 100; i++ {
 		data := &BossData{
-			EncryptID:     "bench_query_" + string(rune(i)),
-			CompanyName:  "查询 Benchmark公司",
-			JobName:      "测试职位",
+			EncryptID:      "bench_query_" + string(rune(i)),
+			CompanyName:    "查询 Benchmark公司",
+			JobName:        "测试职位",
 			DeliveryStatus: "待投递",
 		}
 		Create(data)
