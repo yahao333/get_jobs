@@ -189,3 +189,8 @@ func GetStringSlice(key string) []string {
 func GetMap(key string) map[string]interface{} {
 	return Config.GetStringMap(key)
 }
+
+// Get 获取通用配置
+func Get(key string) interface{} {
+	return Config.Get(key)
+}
