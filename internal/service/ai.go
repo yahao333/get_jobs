@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/loks666/get_jobs/internal/config"
+	"github.com/yahao333/get_jobs/internal/config"
 )
 
 // AIProvider AI 服务提供商接口
@@ -20,17 +20,17 @@ type AIProvider interface {
 
 // QwenVL 阿里 Qwen VL 服务
 type QwenVL struct {
-	apiKey  string
-	model   string
+	apiKey   string
+	model    string
 	endpoint string
-	client  *http.Client
+	client   *http.Client
 }
 
 // NewQwenVL 创建 Qwen VL 服务
 func NewQwenVL(apiKey string, model string) *QwenVL {
 	return &QwenVL{
-		apiKey:  apiKey,
-		model:   model,
+		apiKey:   apiKey,
+		model:    model,
 		endpoint: "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation",
 		client: &http.Client{
 			Timeout: 60 * time.Second,
@@ -44,13 +44,13 @@ func (q *QwenVL) AnalyzeImage(imageData []byte, prompt string) (string, error) {
 	imageBase64 := base64.StdEncoding.EncodeToString(imageData)
 
 	// 构建请求
-	reqBody := map]interface{}{
+	reqBody := map[string]interface{}{
 		"model": q.model,
-		"input": map]interface{}{
-			"messages": []map]interface{}{
+		"input": map[string]interface{}{
+			"messages": []map[string]interface{}{
 				{
 					"role": "user",
-					"content": []map]interface{}{
+					"content": []map[string]interface{}{
 						{
 							"image": "data:image/png;base64," + imageBase64,
 						},
@@ -61,7 +61,7 @@ func (q *QwenVL) AnalyzeImage(imageData []byte, prompt string) (string, error) {
 				},
 			},
 		},
-		"parameters": map]interface{}{
+		"parameters": map[string]interface{}{
 			"result_format": "message",
 		},
 	}
@@ -98,13 +98,13 @@ func (q *QwenVL) AnalyzeImage(imageData []byte, prompt string) (string, error) {
 	}
 
 	// 解析 JSON 响应
-	var result map]interface{}
+	var result map[string]interface{}
 	if err := json.Unmarshal(body, &result); err != nil {
 		return "", fmt.Errorf("解析响应失败: %w", err)
 	}
 
 	// 提取回复内容
-	output, ok := result["output"].(map]interface{})
+	output, ok := result["output"].(map[string]interface{})
 	if !ok {
 		return "", fmt.Errorf("响应格式错误: 缺少 output 字段")
 	}
@@ -114,12 +114,12 @@ func (q *QwenVL) AnalyzeImage(imageData []byte, prompt string) (string, error) {
 		return "", fmt.Errorf("响应格式错误: 缺少 choices")
 	}
 
-	firstChoice, ok := choices[0].(map]interface{})
+	firstChoice, ok := choices[0].(map[string]interface{})
 	if !ok {
 		return "", fmt.Errorf("响应格式错误: choices 格式错误")
 	}
 
-	message, ok := firstChoice["message"].(map]interface{})
+	message, ok := firstChoice["message"].(map[string]interface{})
 	if !ok {
 		return "", fmt.Errorf("响应格式错误: 缺少 message")
 	}
@@ -130,7 +130,7 @@ func (q *QwenVL) AnalyzeImage(imageData []byte, prompt string) (string, error) {
 	}
 
 	// 获取文本内容
-	firstContent, ok := content[0].(map]interface{})
+	firstContent, ok := content[0].(map[string]interface{})
 	if !ok {
 		return "", fmt.Errorf("响应格式错误: content 格式错误")
 	}
@@ -146,13 +146,13 @@ func (q *QwenVL) AnalyzeImage(imageData []byte, prompt string) (string, error) {
 // GenerateText 生成文本
 func (q *QwenVL) GenerateText(prompt string) (string, error) {
 	// 构建请求
-	reqBody := map]interface{}{
+	reqBody := map[string]interface{}{
 		"model": q.model,
-		"input": map]interface{}{
-			"messages": []map]interface{}{
+		"input": map[string]interface{}{
+			"messages": []map[string]interface{}{
 				{
 					"role": "user",
-					"content": []map]interface{}{
+					"content": []map[string]interface{}{
 						{
 							"text": prompt,
 						},
@@ -160,7 +160,7 @@ func (q *QwenVL) GenerateText(prompt string) (string, error) {
 				},
 			},
 		},
-		"parameters": map]interface{}{
+		"parameters": map[string]interface{}{
 			"result_format": "message",
 		},
 	}
@@ -196,12 +196,12 @@ func (q *QwenVL) GenerateText(prompt string) (string, error) {
 		return "", fmt.Errorf("API 返回错误: %d - %s", resp.StatusCode, string(body))
 	}
 
-	var result map]interface{}
+	var result map[string]interface{}
 	if err := json.Unmarshal(body, &result); err != nil {
 		return "", fmt.Errorf("解析响应失败: %w", err)
 	}
 
-	output, ok := result["output"].(map]interface{})
+	output, ok := result["output"].(map[string]interface{})
 	if !ok {
 		return "", fmt.Errorf("响应格式错误")
 	}
