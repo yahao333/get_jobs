@@ -10,7 +10,7 @@ import (
 	"github.com/go-vgo/robotgo"
 	"github.com/playwright-community/playwright-go"
 
-	"github.com/loks666/get_jobs/internal/config"
+	"github.com/yahao333/get_jobs/internal/config"
 )
 
 // ImageResumeSender 图片简历发送器
