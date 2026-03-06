@@ -8,8 +8,8 @@ import (
 
 	"github.com/playwright-community/playwright-go"
 
-	"github.com/loks666/get_jobs/internal/config"
-	"github.com/loks666/get_jobs/internal/storage"
+	"github.com/yahao333/get_jobs/internal/config"
+	"github.com/yahao333/get_jobs/internal/storage"
 )
 
 // BlacklistUpdater 黑名单自动更新器
@@ -84,10 +84,10 @@ func (b *BlacklistUpdater) UpdateFromChatHistory() (int, error) {
 			// 添加到黑名单
 			if companyName != "" {
 				blacklist := storage.Blacklist{
-					Keyword:  companyName,
-					Type:     "company",
-					Source:   "auto",
-					CreatedAt: time.Now().Format("2006-01-02 15:04:05"),
+					Keyword:   companyName,
+					Type:      "company",
+					Source:    "auto",
+					CreatedAt: time.Now(),
 				}
 
 				if err := storage.Create(&blacklist); err == nil {
@@ -121,10 +121,10 @@ func (b *BlacklistUpdater) checkRejectKeywords(messages []string) bool {
 // ManualAdd 手动添加黑名单
 func (b *BlacklistUpdater) ManualAdd(keyword, btype string) error {
 	blacklist := storage.Blacklist{
-		Keyword:  keyword,
-		Type:     btype,
-		Source:   "manual",
-		CreatedAt: time.Now().Format("2006-01-02 15:04:05"),
+		Keyword:   keyword,
+		Type:      btype,
+		Source:    "manual",
+		CreatedAt: time.Now(),
 	}
 	return storage.Create(&blacklist)
 }
