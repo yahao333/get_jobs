@@ -10,9 +10,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/loks666/get_jobs/internal/config"
-	"github.com/loks666/get_jobs/internal/platform"
-	"github.com/loks666/get_jobs/internal/storage"
+	"github.com/yahao333/get_jobs/internal/config"
+	"github.com/yahao333/get_jobs/internal/platform"
+	"github.com/yahao333/get_jobs/internal/storage"
 )
 
 // Server Web 服务器
@@ -271,8 +271,8 @@ func (s *Server) handleGetStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"total_jobs":       totalJobs,
 		"delivered_jobs":   deliveredJobs,
-		"pending_jobs":    pendingJobs,
-		"total_blacklist": totalBlacklist,
+		"pending_jobs":     pendingJobs,
+		"total_blacklist":  totalBlacklist,
 		"total_deliveries": totalDeliveries,
 	})
 }
@@ -280,12 +280,12 @@ func (s *Server) handleGetStatus(c *gin.Context) {
 // handleGetConfig 获取配置
 func (s *Server) handleGetConfig(c *gin.Context) {
 	configs := map[string]interface{}{
-		"search.keywords":    config.GetStringSlice("search.keywords"),
-		"search.city_codes":  config.Get("search.city_codes"),
-		"delivery.daily_limit": config.GetInt("delivery.daily_limit"),
+		"search.keywords":          config.GetStringSlice("search.keywords"),
+		"search.city_codes":        config.Get("search.city_codes"),
+		"delivery.daily_limit":     config.GetInt("delivery.daily_limit"),
 		"delivery.send_img_resume": config.GetBool("delivery.send_img_resume"),
-		"ai.enable":         config.GetBool("ai.enable"),
-		"filter.filter_dead_hr": config.GetBool("filter.filter_dead_hr"),
+		"ai.enable":                config.GetBool("ai.enable"),
+		"filter.filter_dead_hr":    config.GetBool("filter.filter_dead_hr"),
 	}
 
 	c.JSON(http.StatusOK, gin.H{"config": configs})
@@ -435,19 +435,25 @@ const htmlTemplate = `
                 tbody.innerHTML = '<tr><td colspan="6">暂无数据</td></tr>';
                 return;
             }
-            tbody.innerHTML = jobs.map(job => \`
-                <tr>
-                    <td>\${job.company_name}</td>
-                    <td>\${job.job_name}</td>
-                    <td>\${job.salary}</td>
-                    <td>\${job.location}</td>
-                    <td><span class="status status-\${job.delivery_status}">\${job.delivery_status}</span></td>
-                    <td>
-                        <button class="btn" onclick="deliverJob(\${job.id})">投递</button>
-                        <button class="btn btn-danger" onclick="deleteJob(\${job.id})">删除</button>
-                    </td>
-                </tr>
-            \`).join('');
+            tbody.innerHTML = jobs.map(job => {
+                const companyName = job.company_name || '';
+                const jobName = job.job_name || '';
+                const salary = job.salary || '';
+                const location = job.location || '';
+                const status = job.delivery_status || '';
+                const statusClass = 'status status-' + status;
+                return '<tr>'
+                    + '<td>' + companyName + '</td>'
+                    + '<td>' + jobName + '</td>'
+                    + '<td>' + salary + '</td>'
+                    + '<td>' + location + '</td>'
+                    + '<td><span class="' + statusClass + '">' + status + '</span></td>'
+                    + '<td>'
+                    + '<button class="btn" onclick="deliverJob(' + job.id + ')">投递</button>'
+                    + '<button class="btn btn-danger" onclick="deleteJob(' + job.id + ')">删除</button>'
+                    + '</td>'
+                    + '</tr>';
+            }).join('');
         }
 
         function renderBlacklist(blacklist) {
@@ -456,15 +462,19 @@ const htmlTemplate = `
                 tbody.innerHTML = '<tr><td colspan="5">暂无数据</td></tr>';
                 return;
             }
-            tbody.innerHTML = blacklist.map(bl => \`
-                <tr>
-                    <td>\${bl.keyword}</td>
-                    <td>\${bl.type}</td>
-                    <td>\${bl.source}</td>
-                    <td>\${bl.created_at}</td>
-                    <td><button class="btn btn-danger" onclick="deleteBlacklist(\${bl.id})">删除</button></td>
-                </tr>
-            \`).join('');
+            tbody.innerHTML = blacklist.map(bl => {
+                const keyword = bl.keyword || '';
+                const type = bl.type || '';
+                const source = bl.source || '';
+                const createdAt = bl.created_at || '';
+                return '<tr>'
+                    + '<td>' + keyword + '</td>'
+                    + '<td>' + type + '</td>'
+                    + '<td>' + source + '</td>'
+                    + '<td>' + createdAt + '</td>'
+                    + '<td><button class="btn btn-danger" onclick="deleteBlacklist(' + bl.id + ')">删除</button></td>'
+                    + '</tr>';
+            }).join('');
         }
 
         async function searchJobs() {
